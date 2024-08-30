@@ -60,13 +60,13 @@ void goo::write(string name) {
 	headerinfo2_d.write(headerinfo2, headerinfo2_size);
 
 	for (size_t i = 0; i < layerinfos.size(); i++) {
-		ofstream layerinfo { ".\\layerinfos\\" + name + "_layerinfo"
+		ofstream layerinfo { "./layerinfos/" + name + "_layerinfo"
 				+ to_string(i) + ".bin", ios::binary };
 		layerinfo.write(layerinfos[i], layerinfo_size);
 	}
 
 	for (size_t i = 0; i < layers.size(); i++) {
-		ofstream layer { ".\\layers\\"
+		ofstream layer { "./layers/"
 				+ name + "_layer" + to_string(i) + ".bin", ios::binary };
 		layer.write(layers[i], sizes[i]);
 	}
@@ -144,7 +144,7 @@ void goo::decoding(int number) {
 void goo::write_pgm(string dateiname, int step) {
 
 	for (size_t k = 0; k < layers.size(); k += step) {
-		ofstream pgm { ".\\pgms\\" + dateiname + to_string(k) + ".pgm" };
+		ofstream pgm { "./pgms/" + dateiname + to_string(k) + ".pgm" };
 		this->decoding(k);
 		uint32_t *array = decoded;
 		pgm << "P2" << endl;
@@ -164,7 +164,7 @@ void goo::write_pgm(string dateiname, int step) {
 
 void goo::write_pgm2(string dateiname, int step){
 	for(size_t k = 0; k<layers.size();k+=step){
-		ofstream pgm{ ".\\pgms\\" + dateiname + to_string(k) + ".pgm" };
+		ofstream pgm{ "./pgms/" + dateiname + to_string(k) + ".pgm" };
 		this->decoding(k);
 		char *array = (char*) decoded;
 		pgm << "P2" << endl;
