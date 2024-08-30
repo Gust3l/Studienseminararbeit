@@ -146,21 +146,36 @@ void goo::write_pgm(string dateiname, int step) {
 	for (size_t k = 0; k < layers.size(); k += step) {
 		ofstream pgm { ".\\pgms\\" + dateiname + to_string(k) + ".pgm" };
 		this->decoding(k);
-		unsigned char *array = decoded;
-		pgm << "P2" << std::endl;
-		pgm << bm_width << " " << bm_height << std::endl;
-		pgm << (uint32_t) 0xff << std::endl;
+		uint32_t *array = decoded;
+		pgm << "P2" << endl;
+		pgm << bm_width << " " << bm_height << endl;
+		pgm << (uint32_t) 0xff << endl;
 		unsigned int i = 0;
 		for (uint32_t y = 0; y < bm_height; y++) {
 			for (uint32_t x = 0; x < bm_width; x++) {
 				i++;
-				pgm << (uint32_t) *array++ << " ";
+				pgm << *array++ << " ";
 			}
-			pgm << std::endl;
+			pgm<<endl;
 		}
 		pgm.close();
 	}
 }
+
+void goo::write_pgm2(string dateiname, int step){
+	for(size_t k = 0; k<layers.size();k+=step){
+		ofstream pgm{ ".\\pgms\\" + dateiname + to_string(k) + ".pgm" };
+		this->decoding(k);
+		char *array = (char*) decoded;
+		pgm << "P2" << endl;
+		pgm << bm_width << " " << bm_height << endl;
+		pgm << (uint32_t) 0xff << endl;
+		pgm.write(array,100000);
+		pgm.close();
+	}
+}
+
+
 
 int to_int(char *size_c) {
 	return (((unsigned char) size_c[0] << 24)
