@@ -19,13 +19,13 @@ class goo {
 	int big_image_size = 168202;
 	int headerinfo2_size = 167;
 	int layerinfo_size = 66;
-	uint32_t bm_width = 5448;
-	uint32_t bm_height = 3064;
-	char * headerinfo = new char[headerinfo_size];
-	char * small_image = new char[small_image_size];
-	char * big_image = new char[big_image_size];
-	char * headerinfo2 = new char[headerinfo2_size];
-	uint32_t * decoded = new uint32_t [bm_width * bm_height];
+	uint16_t bm_width;
+	uint16_t bm_height;
+	char * headerinfo;
+	char * small_image;
+	char * big_image;
+	char * headerinfo2;
+	unsigned char * decoded;
 	std::vector<char*> layers;
 	std::vector<char*> layerinfos;
 	std::vector<int> sizes;
@@ -35,8 +35,7 @@ public:
 	void read(std::string dateiname);
 	void write(std::string name);
 	void decoding(int layer);
-	void write_pgm(std::string dateiname, int step);
-	void write_pgm2(std::string dateiname, int step);
+	void write_pgm(std::string dateiname);
 };
 
 

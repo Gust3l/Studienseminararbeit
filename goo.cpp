@@ -9,8 +9,14 @@
 using namespace std;
 
 goo::goo() {
-	// TODO Auto-generated constructor stub
+	headerinfo = new char[headerinfo_size];
+	small_image = new char[small_image_size];
+	big_image = new char[big_image_size];
+	headerinfo2 = new char[headerinfo2_size];
+	decoded = new unsigned char[bm_width * bm_height];
 }
+
+
 goo::~goo() {
 	delete[] headerinfo;
 	delete[] headerinfo2;
@@ -31,7 +37,8 @@ void goo::read(string dateiname) {
 	datei.read(small_image, small_image_size);
 	datei.read(big_image, big_image_size);
 	datei.read(headerinfo2, headerinfo2_size);
-
+	bm_width = (uint16_t) (headerinfo2[4]<<8) | (uint8_t) headerinfo2[5];
+	bm_height = (uint16_t) (headerinfo2[6]<<8) | (uint8_t) headerinfo2[7];
 	while (datei.good()) {
 		char *layerinfo = new char[layerinfo_size];
 		datei.read(layerinfo, layerinfo_size);
@@ -40,9 +47,10 @@ void goo::read(string dateiname) {
 			break;
 		}
 		datei.read(size_c, 4);
-		size = to_int(size_c);
+		size = to_int(size_c)+6;
 		sizes.push_back(size);
-		char *layer = new char[size];
+		char *layer = new char[size+4];
+		datei.seekg(-4,ios_base::cur);
 		datei.read(layer, size);
 		layers.push_back(layer);
 	}
@@ -66,8 +74,8 @@ void goo::write(string name) {
 	}
 
 	for (size_t i = 0; i < layers.size(); i++) {
-		ofstream layer { "./layers/"
-				+ name + "_layer" + to_string(i) + ".bin", ios::binary };
+		ofstream layer { "./layers/" + name + "_layer" + to_string(i) + ".bin",
+				ios::binary };
 		layer.write(layers[i], sizes[i]);
 	}
 }
@@ -81,7 +89,7 @@ void goo::decoding(int number) {
 	unsigned char og;
 	int set = 1;
 	long count = 0;
-	int i = 1;
+	int i = 5;
 	while (i < size - 3) {
 		tmp = layer[i] << 2;
 		og = layer[i];
@@ -141,45 +149,23 @@ void goo::decoding(int number) {
 	}
 }
 
-void goo::write_pgm(string dateiname, int step) {
 
-	for (size_t k = 0; k < layers.size(); k += step) {
+void goo::write_pgm(string dateiname) {
+	for (size_t k = 0; k < layers.size(); k ++) {
 		ofstream pgm { "./pgms/" + dateiname + to_string(k) + ".pgm" };
 		this->decoding(k);
-		uint32_t *array = decoded;
-		pgm << "P2" << endl;
-		pgm << bm_width << " " << bm_height << endl;
-		pgm << (uint32_t) 0xff << endl;
-		unsigned int i = 0;
-		for (uint32_t y = 0; y < bm_height; y++) {
-			for (uint32_t x = 0; x < bm_width; x++) {
-				i++;
-				pgm << *array++ << " ";
-			}
-			pgm<<endl;
-		}
-		pgm.close();
-	}
-}
-
-void goo::write_pgm2(string dateiname, int step){
-	for(size_t k = 0; k<layers.size();k+=step){
-		ofstream pgm{ "./pgms/" + dateiname + to_string(k) + ".pgm" };
-		this->decoding(k);
 		char *array = (char*) decoded;
-		pgm << "P2" << endl;
+		pgm << "P5" << endl;
 		pgm << bm_width << " " << bm_height << endl;
 		pgm << (uint32_t) 0xff << endl;
-		pgm.write(array,100000);
+		pgm.write(array, bm_height * bm_width);
 		pgm.close();
 	}
 }
-
-
 
 int to_int(char *size_c) {
 	return (((unsigned char) size_c[0] << 24)
 			| ((unsigned char) size_c[1] << 16)
-			| ((unsigned char) size_c[2] << 8) | (unsigned char) size_c[3]) + 2;
+			| ((unsigned char) size_c[2] << 8) | (unsigned char) size_c[3]);
 }
 
