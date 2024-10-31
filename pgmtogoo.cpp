@@ -14,7 +14,6 @@ pgm_to_goo::pgm_to_goo(int layers) {
 	small_image = new char[small_image_size];
 	big_image = new char[big_image_size];
 	headerinfo2 = new char[headerinfo2_size];
-	pgm = new char[bm_height * bm_width];
 	this->layers = layers;
 }
 
@@ -35,14 +34,15 @@ void pgm_to_goo::read_info(string name) {
 	small_image_d.read(small_image, small_image_size);
 	big_image_d.read(big_image, big_image_size);
 	headerinfo2_d.read(headerinfo2, headerinfo2_size);
-	bm_width = (uint16_t) (headerinfo2[4]<<8) | (uint8_t) headerinfo2[5];
-	bm_height = (uint16_t) (headerinfo2[6]<<8) | (uint8_t) headerinfo2[7];
+	bm_width = (uint16_t) (headerinfo2[4]<<8) | (uint8_t) headerinfo2[5]; //Höhe und Breite wird aus dem Header entnommen
+	bm_height = (uint16_t) (headerinfo2[6]<<8) | (uint8_t) headerinfo2[7]; // Header Größe muss also mit PGM Größe übereinstimmen
+	pgm = new char[bm_height*bm_width];
 }
 
 void pgm_to_goo::read(int number, string name){
 	ifstream datei_layer { "./pgms/" + name + to_string(number) + ".pgm",
 			ios::binary };
-	datei_layer.ignore(20);
+	datei_layer.ignore(20); //Erste 20 Bytes sind magic number und Größe
 	datei_layer.read(pgm, bm_height * bm_width);
 	datei_layer.close();
 }
@@ -52,27 +52,27 @@ void pgm_to_goo::compress(int number,string dateiname){
 	uint8_t * layer = (uint8_t *) pgm;
 	uint8_t checksum = 0;
 	uint8_t value = layer[0];
-	uint8_t pre_value = layer[0] + 0x10;
+	uint8_t pre_value = layer[0] + 0x10; // 0x10 ist größer als die maximale differenz und somit wird der erste Wert nicht als Diff dargestellt
 	uint8_t tmp = 0x00;
 	uint32_t runlength = 1;
 	uint32_t count = 0;
-	bool check_bit = true;
+	bool check_bit = true; // Flag um den Fall der Differenzdarstellung abzudecken
 	unsigned char byte = 0xff;
 	ofstream datei { "./compressed_layers/" + dateiname + to_string(number)
 			+ ".bin", ios::binary };
-	datei.write("", 4);
-	datei << (uint8_t) 0x55;
-	count++;
+	datei.write("", 4); // Platzhalter für die Größe die am Ende hinzugefügt wird
+	datei << (uint8_t) 0x55; // magic number
+	count++; //Zählt die Größe der kompremierten Datei
 	for (unsigned int i = 1; i <= bm_height * bm_width; i++) {
 		if (i != bm_height * bm_width && value == layer[i]) {
 			runlength++;
 		} else {
-			if (abs(value - pre_value) <= 15 && runlength < 256) {
+			if (abs(value - pre_value) <= 15 && runlength < 256) { //Diff val
 				byte &= 0b10111111;
 				check_bit = false;
-			} else if (value == 0xff) {
+			} else if (value == 0xff) { // weiß
 				byte &= 0xff;
-			} else if (value == 0x00) {
+			} else if (value == 0x00) { //schwarz
 				byte &= 0b00111111;
 			} else {
 				byte &= 0b01111111;
@@ -83,7 +83,7 @@ void pgm_to_goo::compress(int number,string dateiname){
 				datei << byte;
 				count++;
 				checksum += byte;
-				if (tmp != 0) {
+				if (tmp != 0) { //falls der Wert seperat abgespeichert werden soll
 					datei << tmp;
 					checksum += tmp;
 					count++;
@@ -187,12 +187,12 @@ void pgm_to_goo::compress(int number,string dateiname){
 	datei.write(check, 1);
 	count++;
 	datei << (uint8_t) 0x0D;
-	datei << (uint8_t) 0x0A;
-	datei.seekp(ios_base::beg);
+	datei << (uint8_t) 0x0A; // delimter
+	datei.seekp(ios_base::beg); //Pointer an den Anfang der Datei setzt
 	datei << (uint8_t) (count >> 24);
 	datei << (uint8_t) (count >> 16);
 	datei << (uint8_t) (count >> 8);
-	datei << (uint8_t) (count);
+	datei << (uint8_t) (count); // Größe an den Anfang schreiben
 	datei.close();
 
 }

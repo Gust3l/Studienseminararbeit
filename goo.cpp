@@ -13,7 +13,6 @@ goo::goo() {
 	small_image = new char[small_image_size];
 	big_image = new char[big_image_size];
 	headerinfo2 = new char[headerinfo2_size];
-	decoded = new unsigned char[bm_width * bm_height];
 }
 
 
@@ -23,10 +22,12 @@ goo::~goo() {
 	delete[] small_image;
 	delete[] big_image;
 	delete[] decoded;
-	for (size_t i = 0; i < layerinfos.size(); i++) {
+	int s = layerinfos.size();
+	for (size_t i = 0; i < s-1; i++) {
 		delete[] layerinfos[i];
 		delete[] layers[i];
 	}
+	delete[] layerinfos[s-1];
 }
 
 void goo::read(string dateiname) {
@@ -95,14 +96,14 @@ void goo::decoding(int number) {
 		og = layer[i];
 		set = 1;
 		// Bits 7,6 überprüfen um den Wert der Pixel herauszufinden
-		if (og < 64)
+		if (og < 64) // 0 0
 			value = 0x00;
-		else if (og < 128) {
+		else if (og < 128) { // 0 1
 			value = layer[i + 1];
 			i++;
-		} else if (og < 192) {
+		} else if (og < 192) { // 1 0
 			set = 0;
-		} else {
+		} else { // 1 1
 			value = 0xff;
 		}
 
@@ -151,6 +152,7 @@ void goo::decoding(int number) {
 
 
 void goo::write_pgm(string dateiname) {
+	decoded = new unsigned char[bm_width * bm_height];
 	for (size_t k = 0; k < layers.size(); k ++) {
 		ofstream pgm { "./pgms/" + dateiname + to_string(k) + ".pgm" };
 		this->decoding(k);
